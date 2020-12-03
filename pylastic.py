@@ -49,10 +49,25 @@ def create_parser():
     default=False
   )
   parser.add_argument(
+    '-e',
+    dest='export',
+    help='export an index',
+    type=str2bool,
+		nargs='?',
+    const=True,
+    default=False
+  )
+  parser.add_argument(
     '-u',
     '--url',
     dest='url',
     help='remote url of the CSV file',
+  )
+  parser.add_argument(
+    '-f',
+    '--file_name',
+    dest='file_name',
+    help='path to export local file',
   )
   parser.add_argument(
     '-i',
@@ -81,25 +96,42 @@ def get_index(es, index_name):
           'match_all' : {}
         }
       })
-  print("%d documents found" % res['hits']['total']['value'])
-  for doc in res['hits']['hits']:
-    pprint.pprint(doc['_source'])
+  return res
 
 def delete_index(es, index_name):
   status = es.indices.delete(index=index_name, ignore=[400, 404])
   return status
 
+def export_index(es, index_name, file_name):
+	res = get_index(es, index_name)
+	with open(file_name, 'w') as f:
+		header_present  = False
+		for doc in res['hits']['hits']:
+			my_dict = doc['_source'] 
+			if not header_present:
+				w = csv.DictWriter(f, my_dict.keys())
+				w.writeheader()
+				header_present = True
+			w.writerow(my_dict)
+
 if __name__ == '__main__':
-  parser = create_parser()
-  args = parser.parse_args()
-  es = Elasticsearch([{'host': 'localhost', 'port': 9200}])
-  if args.create == True:
-    if not args.url:
-      raise Exception("missing url")
-    status = create_index(es, args.url, args.index_name)
-    print(status)
-  elif args.get == True:
-    get_index(es, args.index_name)
-  elif args.delete == True:
-    status = delete_index(es, args.index_name)
-    print(status)
+	parser = create_parser()
+	args = parser.parse_args()
+	es = Elasticsearch([{'host': 'localhost', 'port': 9200}])
+	if args.create == True:
+		if not args.url:
+			raise Exception("missing url")
+		status = create_index(es, args.url, args.index_name)
+		print(status)
+	elif args.get == True:
+		res = get_index(es, args.index_name)
+		print("%d documents found" % res['hits']['total']['value'])
+		for doc in res['hits']['hits']:
+			pprint.pprint(doc['_source'])
+	elif args.delete == True:
+		status = delete_index(es, args.index_name)
+		print(status)
+	elif args.export == True:
+		if not args.file_name:
+			raise Exception("missing file name")
+		export_index(es, args.index_name, args.file_name)
