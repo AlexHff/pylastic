@@ -40,6 +40,15 @@ def create_parser():
     default=False
   )
   parser.add_argument(
+    '-d',
+    dest='delete',
+    help='delete an index',
+    type=str2bool,
+		nargs='?',
+    const=True,
+    default=False
+  )
+  parser.add_argument(
     '-u',
     '--url',
     dest='url',
@@ -76,6 +85,10 @@ def get_index(es, index_name):
   for doc in res['hits']['hits']:
     pprint.pprint(doc['_source'])
 
+def delete_index(es, index_name):
+  status = es.indices.delete(index=index_name, ignore=[400, 404])
+  return status
+
 if __name__ == '__main__':
   parser = create_parser()
   args = parser.parse_args()
@@ -87,3 +100,6 @@ if __name__ == '__main__':
     print(status)
   elif args.get == True:
     get_index(es, args.index_name)
+  elif args.delete == True:
+    status = delete_index(es, args.index_name)
+    print(status)

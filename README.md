@@ -1,6 +1,6 @@
 # pylastic
 
-Simple python script to make CRUD operations on Elasticsearch.
+Simple python CLI to make CRUD operations on Elasticsearch.
 
 ## Getting Started
 
@@ -18,16 +18,22 @@ docker-compose up
 
 ## Usage
 
-To create an index, use the following command:
+### Create an index
 
 ```bash
 ./pylastic.py -c -u https://www1.ncdc.noaa.gov/pub/data/cdo/samples/PRECIP_HLY_sample_csv.csv -i my_index
 ```
 
-To view an index, use the following command:
+### Get an index
 
 ```bash
 ./pylastic.py -g -i my_index
+```
+
+### Delete an index
+
+```bash
+./pylastic.py -d -i my_index
 ```
 
 ## License
