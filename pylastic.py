@@ -3,6 +3,7 @@
 import csv
 import requests
 import argparse
+import pprint
 
 from elasticsearch import helpers, Elasticsearch
 
@@ -30,11 +31,19 @@ def create_parser():
     default=False
   )
   parser.add_argument(
+    '-g',
+    dest='get',
+    help='get all elements from an index',
+    type=str2bool,
+		nargs='?',
+    const=True,
+    default=False
+  )
+  parser.add_argument(
     '-u',
     '--url',
     dest='url',
     help='remote url of the CSV file',
-    required=True
   )
   parser.add_argument(
     '-i',
@@ -56,10 +65,25 @@ def create_index(es, url, index_name):
 	helpers.bulk(es, reader, index=index_name)
 	return True
 
+def get_index(es, index_name):
+  res = es.search(index=index_name, body = {
+        'size' : 10000,
+        'query': {
+          'match_all' : {}
+        }
+      })
+  print("%d documents found" % res['hits']['total']['value'])
+  for doc in res['hits']['hits']:
+    pprint.pprint(doc['_source'])
+
 if __name__ == '__main__':
-	parser = create_parser()
-	args = parser.parse_args()
-	es = Elasticsearch([{'host': 'localhost', 'port': 9200}])
-	if args.create == True:
-		status = create_index(es, args.url, args.index_name)
-		print(status)
+  parser = create_parser()
+  args = parser.parse_args()
+  es = Elasticsearch([{'host': 'localhost', 'port': 9200}])
+  if args.create == True:
+    if not args.url:
+      raise Exception("missing url")
+    status = create_index(es, args.url, args.index_name)
+    print(status)
+  elif args.get == True:
+    get_index(es, args.index_name)
